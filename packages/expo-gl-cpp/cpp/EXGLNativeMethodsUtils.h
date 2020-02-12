@@ -55,6 +55,16 @@ inline bool unpackArg<bool>(jsi::Runtime &runtime, const jsi::Value *jsArgv) {
 }
 
 template <>
+inline const void *unpackArg<const void *>(jsi::Runtime &runtime, const jsi::Value *jsArgv) {
+  if (jsArgv->isNumber()) {
+    return reinterpret_cast<const void *>(static_cast<uint64_t>(jsArgv->getNumber()));
+  } else if (jsArgv->isNull() || jsArgv->isUndefined()) {
+    return nullptr;
+  }
+  throw std::runtime_error("value is not a correct offset");
+}
+
+template <>
 inline GLboolean unpackArg<GLboolean>(jsi::Runtime &runtime, const jsi::Value *jsArgv) {
   return unpackArg<bool>(runtime, jsArgv) ? GL_TRUE : GL_FALSE;
 }
@@ -64,6 +74,11 @@ inline const jsi::Value &unpackArg<const jsi::Value &>(
     jsi::Runtime &runtime,
     const jsi::Value *jsArgv) {
   return *jsArgv;
+}
+
+template <>
+inline std::string unpackArg<std::string>(jsi::Runtime &runtime, const jsi::Value *jsArgv) {
+  return jsArgv->getString(runtime).utf8(runtime);
 }
 
 template <>
@@ -116,6 +131,11 @@ inline std::enable_if_t<std::is_floating_point_v<T>, T> unpackArg(
     return 0;
   }
   return jsArgv->asNumber();
+}
+
+template <jsi::TypedArrayKind T>
+inline jsi::TypedArray<T> unpackArg(jsi::Runtime &runtime, const jsi::Value *jsArgv) {
+  return jsArgv->getObject(runtime).getTypedArray(runtime).as<T>(runtime);
 }
 
 // set of private helpers, do not use directly
@@ -174,6 +194,11 @@ inline std::tuple<T...> unpackArgs(jsi::Runtime &runtime, const jsi::Value *jsAr
   // transform tuple by running unpackArg<T>() on every element
   return methodHelper::unpackArgsTuple(
       runtime, std::move(argTuple), std::make_index_sequence<sizeof...(T)>());
+}
+
+template <>
+inline std::tuple<> unpackArgs(jsi::Runtime &, const jsi::Value *, size_t) {
+  return std::tuple<>();
 }
 
 //

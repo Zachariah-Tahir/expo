@@ -39,6 +39,44 @@ UEXGLContextId EXGLContext::ContextCreate(jsi::Runtime &runtime) {
   return exglCtxId;
 }
 
+void EXGLContext::installMethods(jsi::Runtime &runtime, jsi::Object &jsGl) {
+  using namespace std::placeholders;
+#define NATIVE_METHOD(name)                                                  \
+  setFunctionOnObject(                                                       \
+      runtime,                                                               \
+      jsGl,                                                                  \
+      #name,                                                                 \
+      [this](                                                                \
+          jsi::Runtime &runtime,                                             \
+          const jsi::Value &jsThis,                                          \
+          const jsi::Value *jsArgv,                                          \
+          size_t argc) {                                                     \
+        try {                                                                \
+          return this->glNativeMethod_##name(runtime, jsThis, jsArgv, argc); \
+        } catch (const std::exception &e) {                                  \
+          throw std::runtime_error(std::string("[" #name "] ") + e.what());  \
+        }                                                                    \
+      });
+#define NATIVE_WEBGL2_METHOD(name)                                                  \
+  if (!this->supportsWebGL2) {                                                      \
+    setFunctionOnObject(                                                            \
+        runtime, jsGl, #name, std::bind(unsupportedWebGL2, #name, _1, _2, _3, _4)); \
+  } else {                                                                          \
+    NATIVE_METHOD(name)                                                             \
+  }
+#include "EXGLNativeMethods.def"
+#undef NATIVE_METHOD
+#undef NATIVE_WEBGL2_METHOD
+}
+
+void EXGLContext::installConstants(jsi::Runtime &runtime, jsi::Object &jsGl) {
+#define GL_CONSTANT(name) \
+  jsGl.setProperty(       \
+      runtime, jsi::PropNameID::forUtf8(runtime, #name), static_cast<double>(GL_##name));
+#include "EXGLConstants.def"
+#undef GL_CONSTANT
+};
+
 void EXGLContext::ContextDestroy(UEXGLContextId exglCtxId) {
   std::lock_guard<decltype(EXGLContextMapMutex)> lock(EXGLContextMapMutex);
 
@@ -48,4 +86,46 @@ void EXGLContext::ContextDestroy(UEXGLContextId exglCtxId) {
     delete iter->second;
     EXGLContextMap.erase(iter);
   }
+}
+
+jsi::Value EXGLContext::exglIsObject(UEXGLObjectId id, std::function<GLboolean(GLuint)> func) {
+  GLboolean glResult;
+  addBlockingToNextBatch([&] { glResult = func(lookupObject(id)); });
+  return glResult == GL_TRUE;
+}
+
+jsi::Value EXGLContext::exglGenObject(
+    jsi::Runtime &runtime,
+    std::function<void(GLsizei, UEXGLObjectId *)> func) {
+  return addFutureToNextBatch(runtime, [=] {
+    GLuint buffer;
+    func(1, &buffer);
+    return buffer;
+  });
+  return nullptr;
+}
+
+jsi::Value EXGLContext::exglCreateObject(jsi::Runtime &runtime, std::function<GLuint()> func) {
+  return addFutureToNextBatch(runtime, [=] { return func(); });
+  return nullptr;
+}
+
+jsi::Value EXGLContext::exglDeleteObject(
+    UEXGLObjectId id,
+    std::function<void(UEXGLObjectId)> func) {
+  addToNextBatch([=] { func(lookupObject(id)); });
+  return nullptr;
+}
+
+jsi::Value EXGLContext::exglDeleteObject(
+    UEXGLObjectId id,
+    std::function<void(GLsizei, const UEXGLObjectId *)> func) {
+  addToNextBatch([=] {
+    GLuint buffer = lookupObject(id);
+    func(1, &buffer);
+  });
+  return nullptr;
+}
+jsi::Value EXGLContext::exglUnimplemented(std::string name) {
+  throw std::runtime_error("EXGL: " + name + "() isn't implemented yet!");
 }

@@ -12,21 +12,13 @@
 
 #include <jsi/jsi.h>
 
-inline bool EXGLContext::glIsObject(UEXGLObjectId id, GLboolean func(GLuint)) {
-  GLboolean glResult;
-  addBlockingToNextBatch([&] { glResult = func(lookupObject(id)); });
-  return glResult == GL_TRUE;
-}
-
-inline jsi::Value EXGLContext::glUnimplemented(std::string name) {
-  throw std::runtime_error("EXGL: " + name + "() isn't implemented yet!");
-}
-
-inline jsi::Value EXGLContext::getActiveInfo(
+template <typename Func>
+inline jsi::Value EXGLContext::exglGetActiveInfo(
+    jsi::Runtime &runtime,
     UEXGLObjectId fProgram,
     GLuint index,
     GLenum lengthParam,
-    getActiveInfoFunc glFunc) {
+    Func glFunc) {
   if (fProgram == 0) {
     return nullptr;
   }
@@ -41,7 +33,7 @@ inline jsi::Value EXGLContext::getActiveInfo(
     GLuint program = lookupObject(fProgram);
     glGetProgramiv(program, lengthParam, &maxNameLength);
     name.resize(maxNameLength);
-    getActiveInfoFunc(program, index, maxNameLength, &length, &size, &type, &name[0]);
+    glFunc(program, index, maxNameLength, &length, &size, &type, &name[0]);
   });
 
   if (strlen(name.c_str()) == 0) { // name.length() may be larger
@@ -53,4 +45,36 @@ inline jsi::Value EXGLContext::getActiveInfo(
   jsResult.setProperty(runtime, "size", size);
   jsResult.setProperty(runtime, "type", static_cast<double>(type));
   return jsResult;
+}
+
+template <typename Func, typename... T>
+inline jsi::Value EXGLContext::exglCall(Func func, T &&... args) {
+  addToNextBatch([=, args = std::make_tuple(std::forward<T>(args)...)] {
+    return std::apply(func, std::move(args));
+  });
+}
+
+template <typename Func, typename T>
+inline jsi::Value
+EXGLContext::exglUniformv(Func func, GLuint uniform, size_t dim, std::vector<T> &&data) {
+  addToNextBatch([=, data{std::move(data)}] { func(uniform, data.size() / dim, data.data()); });
+  return nullptr;
+}
+
+template <typename Func, typename T>
+inline jsi::Value EXGLContext::exglUniformMatrixv(
+    Func func,
+    GLuint uniform,
+    GLboolean transpose,
+    size_t dim,
+    std::vector<T> &&data) {
+  addToNextBatch(
+      [=, data{std::move(data)}] { func(uniform, data.size() / dim, transpose, data.data()); });
+  return nullptr;
+}
+
+template <typename Func, typename T>
+inline jsi::Value EXGLContext::exglVertexAttribv(Func func, GLuint index, std::vector<T> &&data) {
+  addToNextBatch([=, data{std::move(data)}] { func(index, data.data()); });
+  return nullptr;
 }
