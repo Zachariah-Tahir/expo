@@ -114,11 +114,11 @@ void decodeURI(char *dst, const char *src) {
 // and needs to be in cpp file Load image data from an object with a `.localUri` member
 std::shared_ptr<uint8_t> loadImage(
     jsi::Runtime &runtime,
-    const jsi::Value &jsPixels,
+    const jsi::Object &jsPixels,
     int *fileWidth,
     int *fileHeight,
     int *fileComp) {
-  auto localUriProp = jsPixels.asObject(runtime).getProperty(runtime, "localUri");
+  auto localUriProp = jsPixels.getProperty(runtime, "localUri");
   if (localUriProp.isString()) {
     auto localUri = localUriProp.asString(runtime).utf8(runtime);
     if (strncmp(localUri.c_str(), "file://", 7) != 0) {

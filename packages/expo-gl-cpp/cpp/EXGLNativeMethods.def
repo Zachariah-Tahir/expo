@@ -53,8 +53,8 @@ NATIVE_METHOD(getBufferParameter)
 NATIVE_METHOD(isBuffer)
 
 // Buffers (WebGL2)
-NATIVE_METHOD(copyBufferSubData)
-NATIVE_METHOD(getBufferSubData)
+NATIVE_WEBGL2_METHOD(copyBufferSubData)
+NATIVE_WEBGL2_METHOD(getBufferSubData)
 
 // Framebuffers
 NATIVE_METHOD(bindFramebuffer)
@@ -68,11 +68,11 @@ NATIVE_METHOD(isFramebuffer)
 NATIVE_METHOD(readPixels)
 
 // Framebuffers (WebGL2)
-NATIVE_METHOD(blitFramebuffer)
-NATIVE_METHOD(framebufferTextureLayer)
-NATIVE_METHOD(invalidateFramebuffer)
-NATIVE_METHOD(invalidateSubFramebuffer)
-NATIVE_METHOD(readBuffer)
+NATIVE_WEBGL2_METHOD(blitFramebuffer)
+NATIVE_WEBGL2_METHOD(framebufferTextureLayer)
+NATIVE_WEBGL2_METHOD(invalidateFramebuffer)
+NATIVE_WEBGL2_METHOD(invalidateSubFramebuffer)
+NATIVE_WEBGL2_METHOD(readBuffer)
 
 // Renderbuffers
 NATIVE_METHOD(bindRenderbuffer)
@@ -83,8 +83,8 @@ NATIVE_METHOD(isRenderbuffer)
 NATIVE_METHOD(renderbufferStorage)
 
 // Renderbuffers (WebGL2)
-NATIVE_METHOD(getInternalformatParameter)
-NATIVE_METHOD(renderbufferStorageMultisample)
+NATIVE_WEBGL2_METHOD(getInternalformatParameter)
+NATIVE_WEBGL2_METHOD(renderbufferStorageMultisample)
 
 // Textures
 NATIVE_METHOD(bindTexture)
@@ -103,13 +103,13 @@ NATIVE_METHOD(texParameterf)
 NATIVE_METHOD(texParameteri)
 
 // Textures (WebGL2)
-NATIVE_METHOD(texStorage2D)
-NATIVE_METHOD(texStorage3D)
-NATIVE_METHOD(texImage3D)
-NATIVE_METHOD(texSubImage3D)
-NATIVE_METHOD(copyTexSubImage3D)
-NATIVE_METHOD(compressedTexImage3D)
-NATIVE_METHOD(compressedTexSubImage3D)
+NATIVE_WEBGL2_METHOD(texStorage2D)
+NATIVE_WEBGL2_METHOD(texStorage3D)
+NATIVE_WEBGL2_METHOD(texImage3D)
+NATIVE_WEBGL2_METHOD(texSubImage3D)
+NATIVE_WEBGL2_METHOD(copyTexSubImage3D)
+NATIVE_WEBGL2_METHOD(compressedTexImage3D)
+NATIVE_WEBGL2_METHOD(compressedTexSubImage3D)
 
 // Programs and shaders
 NATIVE_METHOD(attachShader)
@@ -135,7 +135,7 @@ NATIVE_METHOD(useProgram)
 NATIVE_METHOD(validateProgram)
 
 // Programs and shaders (WebGL2)
-NATIVE_METHOD(getFragDataLocation)
+NATIVE_WEBGL2_METHOD(getFragDataLocation)
 
 // Uniforms and attributes
 NATIVE_METHOD(disableVertexAttribArray)

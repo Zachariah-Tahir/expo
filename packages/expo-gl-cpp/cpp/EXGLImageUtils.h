@@ -17,7 +17,7 @@ void flipPixels(GLubyte *pixels, size_t bytesPerRow, size_t rows);
 
 std::shared_ptr<uint8_t> loadImage(
     facebook::jsi::Runtime &runtime,
-    const facebook::jsi::Value &jsPixels,
+    const facebook::jsi::Object &jsPixels,
     int *fileWidth,
     int *fileHeight,
     int *fileComp);

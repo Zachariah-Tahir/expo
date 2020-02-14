@@ -39,6 +39,17 @@ UEXGLContextId EXGLContext::ContextCreate(jsi::Runtime &runtime) {
   return exglCtxId;
 }
 
+void EXGLContext::ContextDestroy(UEXGLContextId exglCtxId) {
+  std::lock_guard<decltype(EXGLContextMapMutex)> lock(EXGLContextMapMutex);
+
+  // Destroy C++ object, JavaScript side should just know...
+  auto iter = EXGLContextMap.find(exglCtxId);
+  if (iter != EXGLContextMap.end()) {
+    delete iter->second;
+    EXGLContextMap.erase(iter);
+  }
+}
+
 void EXGLContext::installMethods(jsi::Runtime &runtime, jsi::Object &jsGl) {
   using namespace std::placeholders;
 #define NATIVE_METHOD(name)                                                  \
@@ -52,6 +63,7 @@ void EXGLContext::installMethods(jsi::Runtime &runtime, jsi::Object &jsGl) {
           const jsi::Value *jsArgv,                                          \
           size_t argc) {                                                     \
         try {                                                                \
+          EXGLSysLog("call %s", #name);                                      \
           return this->glNativeMethod_##name(runtime, jsThis, jsArgv, argc); \
         } catch (const std::exception &e) {                                  \
           throw std::runtime_error(std::string("[" #name "] ") + e.what());  \
@@ -76,17 +88,6 @@ void EXGLContext::installConstants(jsi::Runtime &runtime, jsi::Object &jsGl) {
 #include "EXGLConstants.def"
 #undef GL_CONSTANT
 };
-
-void EXGLContext::ContextDestroy(UEXGLContextId exglCtxId) {
-  std::lock_guard<decltype(EXGLContextMapMutex)> lock(EXGLContextMapMutex);
-
-  // Destroy C++ object, JavaScript side should just know...
-  auto iter = EXGLContextMap.find(exglCtxId);
-  if (iter != EXGLContextMap.end()) {
-    delete iter->second;
-    EXGLContextMap.erase(iter);
-  }
-}
 
 jsi::Value EXGLContext::exglIsObject(UEXGLObjectId id, std::function<GLboolean(GLuint)> func) {
   GLboolean glResult;
